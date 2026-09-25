@@ -18,8 +18,16 @@ public final class RaceConditionExperiment {
         var executor = Executors.newFixedThreadPool(WORKER_COUNT);
 
         try {
-            var first = executor.submit(() -> increment(counter, ready, start));
-            var second = executor.submit(() -> increment(counter, ready, start));
+            // 返回 null 可让 lambda 匹配 Callable；工作线程的 InterruptedException
+            // 会由 Future 保存，并在下面的 get() 中以 ExecutionException 报告。
+            var first = executor.submit(() -> {
+                increment(counter, ready, start);
+                return null;
+            });
+            var second = executor.submit(() -> {
+                increment(counter, ready, start);
+                return null;
+            });
 
             ready.await();
             start.countDown();
@@ -30,7 +38,9 @@ public final class RaceConditionExperiment {
             System.out.println("Expected count: " + expected);
             System.out.println("Actual count:   " + counter.value);
         } finally {
-            executor.shutdown();
+            // 即使主线程在等待时被中断，也释放可能仍在等待 start 的工作线程。
+            start.countDown();
+            executor.shutdownNow();
         }
     }
 

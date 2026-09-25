@@ -108,6 +108,6 @@ macOS/Linux：
 
 初期保持单 Maven 项目、单体和内存数据。先让领域规则与学习实验清楚可测；Stage 4/5 再评估持久化端口与适配器，未来需要时才拆 Maven 模块或服务。演进约束见 [`docs/architecture/adr/ADR-001-initial-project-structure.md`](docs/architecture/adr/ADR-001-initial-project-structure.md)。
 
-## 当前环境提示
+## 运行环境
 
-搭建时检测到此工作区默认 `java` 为 1.8.0_162、`mvn` 为 3.3.9。项目目标是 Java 17；请将本机 `JAVA_HOME`/`PATH` 切换到 JDK 17 后再编译。Maven Wrapper 统一 Maven 版本，不会改变当前使用的 JDK。
+项目使用 Java 17 语言级别。运行 Maven Wrapper 前确认 `java -version` 显示 JDK 17；Wrapper 会固定 Maven 版本，但不会切换 JDK。
