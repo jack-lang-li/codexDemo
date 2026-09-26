@@ -1,76 +1,77 @@
-# Java Learning Project
+# Java 企业后端学习实验项目
 
-一个长期演进的 Java 学习实验场：先用纯 Java 理解核心机制，再让同一个交易领域逐步吸收 Spring、数据库、中间件和分布式设计。
+这是一个用于循序学习 Java 高级开发、Spring 企业后端、微服务和分布式系统的 Maven 实验项目。当前代码仍以 Java 基础、订单领域示例和并发实验为主；`pom.xml` 已为后续学习准备常见企业技术栈。依赖就位不代表相关中间件已经配置或启动，按学习阶段逐项接入，不要一次启用所有基础设施。
 
-## 当前阶段
+## 技术基线
 
-**Stage 1：Java 基础补强（进行中）**
-
-当前代码只包含一个内存订单示例和一个并发实验。没有提前引入 Spring、数据库、缓存、消息队列或微服务。
-
-## 学习路线
-
-1. **Stage 1 — Java 基础：** OOP、异常、字符串、集合、泛型、Lambda、Stream、Optional、基础 IO。
-2. **Stage 2 — Java Core：** 集合实现、泛型原理、IO/NIO、Buffer、Channel、Selector、序列化。
-3. **Stage 3 — 并发与 JVM：** 线程、同步、CAS、锁、线程池、CompletableFuture、JVM 内存、类加载、GC、JIT、字节码和性能分析。
-4. **Stage 4 — Spring：** IoC、DI、AOP、Bean 生命周期、MVC、Boot、校验、事务与 Actuator。
-5. **Stage 5 — 数据与消息：** SQL、MySQL、事务、索引、MVCC、Redis、缓存和一种 MQ。
-6. **Stage 6 — 分布式：** RPC、服务发现、幂等、重试、超时、限流、熔断、分布式 ID 与一致性。
-7. **Stage 7 — 微服务与性能：** Gateway、注册/配置中心、集群、搜索、观测、Docker、压测与 JVM 调优。
-8. **Stage 8 — 架构与源码：** 研究框架、中间件和 JVM 源码，将交易、用户、库存、支付、风控和通知逐步演进为综合系统。
-
-各阶段的边界和引入条件见 [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md)。每项重要结构决策记入 [`docs/architecture/adr/`](docs/architecture/adr/)。
-
-## 技术栈演进
-
-| 阶段 | 技术基线 |
+| 类别 | 当前基线 |
 | --- | --- |
-| 1–3 | Java 17、Maven、JUnit 5；并发和 JVM 内容在需要时逐步增加 |
-| 4 | 在理解 Java 基础后引入适配 Java 17 的 Spring Boot 稳定版本 |
-| 5 | 先 MySQL，再 Redis，再选择一种 MQ；每项技术配套学习目标和 ADR |
-| 6–8 | 按实际问题逐步引入分布式、微服务、可观测性、性能工具和源码研究 |
+| 语言与构建 | Java 17、Maven Wrapper 3.9.16 |
+| Spring Boot | 3.5.16 |
+| Spring Cloud | 2025.0.3 release train，适配 Spring Boot 3.5.x |
+| Spring Cloud Alibaba | 2025.0.0.0，2025.0.x 线适配 Spring Cloud 2025.0.x / Spring Boot 3.5.x |
+| ORM | MyBatis-Plus 3.5.17（Spring Boot 3 starter） |
+| 数据库 | MySQL Connector/J、Druid Boot 3 starter、Flyway |
+| 缓存 | Spring Data Redis、Redisson 4.7.0（显式选择 Spring Data Redis 3.5 适配模块） |
+| 消息 | RocketMQ Spring 2.3.6、Spring for Apache Kafka、Spring AMQP / RabbitMQ |
+| 搜索 | Spring Data Elasticsearch |
+| 微服务 | Nacos、OpenFeign、Spring Cloud Gateway、Sentinel、Seata |
+| 调度 | Quartz、XXL-JOB 3.4.2 |
+| API 文档 | SpringDoc OpenAPI 2.9.1 / Swagger UI |
+| 可观测性 | Spring Boot Actuator、Micrometer Prometheus、Logstash Logback Encoder 8.1 |
+| 安全 | Spring Security、JJWT 0.13.0 |
+| 通用工具 | Lombok、Apache Commons Lang3、Guava、Hutool |
+| 文件存储 | MinIO Java SDK 9.0.3 |
+| 测试 | Spring Boot Test（JUnit Jupiter、Mockito、AssertJ） |
 
-未来框架版本在进入对应阶段时再根据官方兼容矩阵确认，避免现在固定尚未使用的技术依赖。
+Spring Boot 负责 Spring 生态常用依赖版本；Spring Cloud、Spring Cloud Alibaba、MyBatis-Plus 和 JJWT 通过 BOM 集中管理。Boot 3 使用 Druid 的 `druid-spring-boot-3-starter`。Redisson 4.x 默认选择 Spring Data Redis 4.x 适配器，本项目排除该模块并使用 `redisson-spring-data-35`，对应 Boot 3.5 的 Spring Data Redis 版本。
 
-## 当前学习目标
+> 支持状态：因项目明确要求 Spring Boot 3.x，这里选用 3.5 线最后一个 OSS 版本 3.5.16。Spring 官方已说明它是 3.5.x 的最后一个 OSS release；若用于生产环境，需要企业支持或规划迁移到 Spring Boot 4.x。
 
-- [x] 建立 Java 17 Maven 单体项目和 JUnit 5 测试入口
-- [x] 用纯 Java 建立最小商品与订单领域示例
-- [x] 准备一个可独立运行的线程安全性实验
-- [ ] 完成 OOP、异常、集合、泛型、Lambda/Stream、Optional 与基础 IO 的配套练习
-- [ ] 随学习进度补齐边界、异常和参数化测试
-- [ ] 总结每个实验的假设、观察和结论
+**运行边界：** 这是单 Maven 模块的学习依赖集合，不是声称所有中间件已集成的生产服务。Spring Cloud Gateway 使用 WebFlux/reactive 技术栈，而本项目的普通 Web API 使用 Spring MVC；Gateway 应作为单独服务或独立模块学习，不要把两种 Web 栈当作一个运行入口。多个 MQ、数据库、缓存、搜索和调度组件也应按主题分开配置与运行。
 
-## 当前目录结构
+## 学习顺序
+
+1. **Java 基础与核心：** OOP、异常、集合、泛型、Lambda/Stream、Optional、IO/NIO、集合实现和常见设计模式。
+2. **并发与 JVM：** 线程安全、锁、CAS、线程池、CompletableFuture、JVM 内存、类加载、GC 和性能分析。
+3. **Spring 基础：** Spring IoC/DI、Bean 生命周期、配置、AOP、事务，以及 Spring Boot 自动配置和 Actuator。
+4. **Web API：** Spring MVC、REST、参数校验、统一异常处理、SpringDoc 与 API 测试。
+5. **安全：** Spring Security 认证/授权、密码处理、过滤器链、JWT 生命周期与密钥管理。
+6. **关系数据库：** SQL 与 MySQL 事务、索引、锁、MVCC；再学习 MyBatis-Plus、连接池指标和 Flyway 迁移。
+7. **缓存：** Redis 数据结构、缓存一致性和失效策略；然后用 Redisson 学分布式锁、限流和集合。
+8. **消息驱动：** 先理解消息语义、重试、幂等和死信，再依次比较 Kafka、RabbitMQ、RocketMQ 的模型和适用场景。
+9. **可观测性：** 结构化日志、日志脱敏与关联 ID、Actuator、Micrometer 指标和 Prometheus。
+10. **微服务：** 先服务发现和配置中心（Nacos），再 OpenFeign、Gateway、Sentinel；最后通过故障场景学习 Seata 与分布式事务边界。
+11. **任务调度：** 先学习单应用 Quartz，再学习 XXL-JOB 的调度中心、执行器、分片和故障恢复。
+12. **搜索与对象存储：** 学 Elasticsearch 的索引/查询与数据同步，再学 MinIO 的桶、对象、权限和预签名 URL。
+13. **工具库与综合实践：** 仅在标准库不能清楚解决问题时引入 Commons Lang、Guava、Hutool 或 Lombok；逐步形成有监控、迁移、重试和恢复方案的综合练习。
+
+每个主题先写学习问题和预期，再实现最小实验，记录观察、失败方式和设计取舍。每个中间件的独立目录见 [`docs/learning/stack/README.md`](docs/learning/stack/README.md)。
+
+## 当前代码与文档
 
 ```text
-.
-├── .mvn/wrapper/                 # Maven Wrapper 配置
-├── docs/
-│   ├── ai/                       # AI 辅助学习规范、提示词和记录模板
-│   ├── architecture/adr/         # 架构决策记录与演进路线
-│   ├── database/                 # 数据持久化阶段的设计入口
-│   ├── learning/lab/             # 学习目标、实验说明与结论
-│   └── notes/                    # 可复用的学习笔记模板
-├── src/main/java/com/example/learning/
-│   ├── application/              # 可运行的学习入口
-│   ├── domain/                   # 当前阶段实际使用的商品和订单模型
-│   └── lab/concurrency/          # 可独立运行的并发实验
-└── src/test/java/                # 与业务代码对应的 JUnit 5 测试
+src/main/java/com/example/learning/   # 当前 Java 示例、领域对象和并发实验
+src/test/java/                         # 单元测试与待整理的学习示例
+docs/learning/stack/                   # 中间件与基础组件的一主题一目录
+docs/learning/lab/                     # 可运行实验说明和观察记录
+docs/architecture/                     # 演进路线与架构决策记录
+docs/database/                         # 数据持久化学习入口
+docs/notes/                            # 学习笔记模板
+docs/ai/                               # AI 辅助学习规范与模板
 ```
 
-只为当前代码创建 package；新的学习主题在有真实实验内容时再加入。
+当前实验：[未同步计数器](docs/learning/lab/concurrency/README.md)。架构演进约束见 [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md)，数据库学习入口见 [`docs/database/README.md`](docs/database/README.md)。
 
-## 如何运行
+## 运行
 
-要求本机安装 **JDK 17**。先检查 `java -version`；Maven Wrapper 固定使用 Maven 3.9.16，但它不会替你安装 JDK。
+要求 JDK 17 或更高版本。Maven Wrapper 固定 Maven 3.9.16，但不会替你安装或切换 JDK。
 
 Windows PowerShell：
 
 ```powershell
 java -version
 .\mvnw.cmd compile
-java -cp target\classes com.example.learning.application.LearningApplication
 ```
 
 macOS/Linux：
@@ -78,36 +79,13 @@ macOS/Linux：
 ```bash
 java -version
 ./mvnw compile
-java -cp target/classes com.example.learning.application.LearningApplication
 ```
 
-首次使用 Wrapper 需要联网下载 Maven 和 Maven 依赖。若不使用 Wrapper，也可用已安装且足够新的 Maven 执行同样的 Maven 目标。
+首次使用 Wrapper 需要联网下载 Maven 和项目依赖。完成环境准备后可用 `.\mvnw.cmd test`（Windows）或 `./mvnw test`（macOS/Linux）运行测试。
 
-## 如何运行测试
+## 版本兼容依据
 
-Windows PowerShell：
-
-```powershell
-.\mvnw.cmd test
-```
-
-macOS/Linux：
-
-```bash
-./mvnw test
-```
-
-当前订单测试覆盖正常金额计算、无效数量边界和商品不存在异常。测试已加入项目；运行时需要 JDK 17 和首次依赖下载所需的网络连接。
-
-## 学习实验
-
-- [并发：未同步计数器](docs/learning/lab/concurrency/README.md)：观察复合读改写操作的竞态。实验结果具有不确定性，不作为正确性测试。
-- [AI 辅助学习规范](docs/ai/README.md)：先独立分析、实现，再请求审查和总结。
-
-## 架构演进
-
-初期保持单 Maven 项目、单体和内存数据。先让领域规则与学习实验清楚可测；Stage 4/5 再评估持久化端口与适配器，未来需要时才拆 Maven 模块或服务。演进约束见 [`docs/architecture/adr/ADR-001-initial-project-structure.md`](docs/architecture/adr/ADR-001-initial-project-structure.md)。
-
-## 运行环境
-
-项目使用 Java 17 语言级别。运行 Maven Wrapper 前确认 `java -version` 显示 JDK 17；Wrapper 会固定 Maven 版本，但不会切换 JDK。
+- [Spring Cloud 版本映射与 BOM 指南](https://spring.io/projects/spring-cloud)：2025.0.x 对应 Spring Boot 3.5.x。
+- [Spring Cloud Alibaba 2025.x 版本说明](https://sca.aliyun.com/en/docs/2025.x/overview/version-explain/)：2025.0.0.0 对应 Spring Cloud 2025.0.0 / Spring Boot 3.5.0。
+- [MyBatis-Plus 安装说明](https://baomidou.com/en/getting-started/install/)：Spring Boot 3 使用 `mybatis-plus-spring-boot3-starter`。
+- [Redisson Spring 集成说明](https://redisson.pro/docs/integration-with-spring/)：适配器后缀需匹配 Spring Data Redis 版本。

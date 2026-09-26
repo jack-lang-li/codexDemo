@@ -1,8 +1,8 @@
 # 数据持久化学习入口
 
-当前阶段不添加数据库依赖，也不模拟 SQL。商品目录暂时由 `OrderService` 持有的不可变 Map 快照提供。
+项目 POM 已预先声明 MySQL Connector/J、MyBatis-Plus、Druid 和 Flyway，作为后续实验的依赖基线；当前订单示例仍使用内存中的不可变 Map，不代表数据库连接、迁移或 Repository 已经实现。按学习主题逐项接入。
 
-进入 Stage 4/5 前，先围绕当前订单示例写下要回答的问题：
+先围绕当前订单示例写下要回答的问题：
 
 - 进程重启后，订单和商品数据如何保留？
 - 订单创建与库存扣减需要哪些事务边界？
@@ -10,4 +10,11 @@
 - 哪些规则属于领域对象，哪些属于存储适配器？
 - 是否需要 Repository 接口；选择 JDBC、MyBatis 或其他方式的理由是什么？
 
-先用一份 ADR 比较方案，再添加数据库驱动和迁移脚本。MySQL、Redis 和 MQ 分别作为独立学习决策引入，不打包成一次升级。
+建议先用一份 ADR 比较方案，再用 Flyway 管理 schema，接着分别学习 MySQL、MyBatis-Plus、连接池观测。Redis 和各 MQ 保持为独立实验，不打包成一次升级。
+
+专题目录：
+
+- [MySQL](../learning/stack/mysql/README.md)
+- [MyBatis-Plus](../learning/stack/mybatis-plus/README.md)
+- [Druid](../learning/stack/druid/README.md)
+- [Flyway](../learning/stack/flyway/README.md)
