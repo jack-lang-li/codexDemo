@@ -29,8 +29,8 @@ public class RedisMessageIdempotencyService {
     private final Duration retention;
 
     public RedisMessageIdempotencyService(StringRedisTemplate redis,
-            @Value("${demo.mq.idempotency.lease-seconds:300}") long leaseSeconds,
-            @Value("${demo.mq.idempotency.retention-seconds:86400}") long retentionSeconds) {
+            @Value("${app.mq.idempotency.lease-seconds:300}") long leaseSeconds,
+            @Value("${app.mq.idempotency.retention-seconds:86400}") long retentionSeconds) {
         if (leaseSeconds <= 0 || retentionSeconds <= 0) {
             throw new IllegalArgumentException("幂等过期时间必须大于 0");
         }
@@ -41,7 +41,7 @@ public class RedisMessageIdempotencyService {
 
     /** @return true 表示本次执行业务，false 表示已完成的重复消息。Redis 异常直接抛出，绝不误 ACK。 */
     public boolean execute(String scope, String messageId, Runnable business) {
-        String key = "demo:mq:consumed:" + scope + ":" + messageId;
+        String key = "learning:mq:consumed:" + scope + ":" + messageId;
         String token = UUID.randomUUID().toString();
         if (!Boolean.TRUE.equals(redis.opsForValue().setIfAbsent(key, token, lease))) {
             if ("DONE".equals(redis.opsForValue().get(key))) {

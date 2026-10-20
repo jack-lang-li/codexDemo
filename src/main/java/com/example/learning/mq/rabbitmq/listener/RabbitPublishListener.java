@@ -6,6 +6,7 @@ import org.springframework.amqp.core.ReturnedMessage;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Confirm 观察生产者 -> Broker；Return 观察 Exchange -> Queue 的不可路由情况。
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
  * 这两个回调均不能证明 Consumer 的业务成功。异常恢复应结合业务发送记录/Outbox。
  */
 @Component
+@ConditionalOnProperty(name = "app.mq.rabbitmq.enabled", havingValue = "true")
 public class RabbitPublishListener implements RabbitTemplate.ConfirmCallback, RabbitTemplate.ReturnsCallback {
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitPublishListener.class);
 

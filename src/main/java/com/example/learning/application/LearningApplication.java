@@ -1,24 +1,17 @@
 package com.example.learning.application;
 
-import com.example.learning.domain.order.OrderService;
-import com.example.learning.domain.product.Product;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.logging.Logger;
-
-public final class LearningApplication {
-    private static final Logger LOGGER = Logger.getLogger(LearningApplication.class.getName());
-
-    private LearningApplication() {
-    }
-
+/**
+ * 项目统一服务入口。配置默认从 application.yml 加载，不再单独启动 MQ 应用。
+ * 业务、领域、通用配置与 MQ 均纳入同一个 Spring 容器；教学示例仅在测试中显式导入。
+ */
+@SpringBootApplication(scanBasePackages = {
+        "com.example.learning.application", "com.example.learning.domain",
+        "com.example.learning.config", "com.example.learning.mq"})
+public class LearningApplication {
     public static void main(String[] args) {
-        var product = new Product("P-1001", "Notebook", new BigDecimal("19.90"));
-        var orderService = new OrderService(List.of(product));
-
-        var order = orderService.createOrder("O-1001", "U-1001", "P-1001", 2);
-        LOGGER.info(() -> "Created order " + order.getOrderId()
-                + " with total " + order.getTotalAmount());
+        SpringApplication.run(LearningApplication.class, args);
     }
 }

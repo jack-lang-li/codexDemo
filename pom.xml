@@ -394,8 +394,8 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <!-- 独立 MQ 实验入口；原纯 Java main 不变，不修改任何依赖版本。 -->
-                    <mainClass>com.example.learning.mq.MqDemoApplication</mainClass>
+                    <!-- 使用项目统一入口，消息能力与业务处于同一服务内。 -->
+                    <mainClass>com.example.learning.application.LearningApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

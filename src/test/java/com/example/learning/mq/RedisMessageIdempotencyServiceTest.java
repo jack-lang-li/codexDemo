@@ -19,7 +19,7 @@ class RedisMessageIdempotencyServiceTest {
     private StringRedisTemplate redis;
     private ValueOperations<String, String> values;
     private RedisMessageIdempotencyService service;
-    private final String key = "demo:mq:consumed:orders:m-1";
+    private final String key = "learning:mq:consumed:orders:m-1";
 
     @BeforeEach
     @SuppressWarnings("unchecked")

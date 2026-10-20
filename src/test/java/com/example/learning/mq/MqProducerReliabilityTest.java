@@ -1,7 +1,7 @@
 package com.example.learning.mq;
 
-import com.example.learning.mq.common.dto.MessageDemoDTO;
-import com.example.learning.mq.rabbitmq.producer.RabbitDemoProducer;
+import com.example.learning.mq.common.dto.MessageEvent;
+import com.example.learning.mq.rabbitmq.producer.RabbitMessageProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 
 /** 发布确认的反例：Confirm ACK+Return 仍应失败，DLT 写入失败不能假装恢复成功。 */
 class MqProducerReliabilityTest {
-    private final MessageDemoDTO event = new MessageDemoDTO("m-1", "O-1", "order.created", "test", Instant.now(), 0, null);
+    private final MessageEvent event = new MessageEvent("m-1", "O-1", "order.created", "test", Instant.now(), 0, null);
 
     @Test
     void rabbitConfirmAckWithoutRouteIsStillFailure() {
@@ -30,13 +30,13 @@ class MqProducerReliabilityTest {
             correlation.getFuture().complete(new CorrelationData.Confirm(true, null));
             return null;
         }).when(template).convertAndSend(anyString(), anyString(), eq(event), any(MessagePostProcessor.class), any(CorrelationData.class));
-        assertThrows(IllegalStateException.class, () -> new RabbitDemoProducer(template, 50).send("exchange", "bad-key", event));
+        assertThrows(IllegalStateException.class, () -> new RabbitMessageProducer(template, 50).send("exchange", "bad-key", event));
     }
 
     @Test
     void rabbitMissingConfirmationCannotReturnSuccessfulSend() {
         RabbitTemplate template = mock(RabbitTemplate.class);
-        assertThrows(IllegalStateException.class, () -> new RabbitDemoProducer(template, 1).send("exchange", "key", event));
+        assertThrows(IllegalStateException.class, () -> new RabbitMessageProducer(template, 1).send("exchange", "key", event));
     }
 
 }

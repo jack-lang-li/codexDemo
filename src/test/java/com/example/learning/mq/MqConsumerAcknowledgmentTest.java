@@ -1,9 +1,9 @@
 package com.example.learning.mq;
 
-import com.example.learning.mq.common.dto.MessageDemoDTO;
-import com.example.learning.mq.common.service.DemoBusinessService;
-import com.example.learning.mq.kafka.consumer.KafkaDemoConsumer;
-import com.example.learning.mq.rabbitmq.consumer.RabbitDemoConsumer;
+import com.example.learning.mq.common.dto.MessageEvent;
+import com.example.learning.teaching.mq.common.service.DemoBusinessService;
+import com.example.learning.teaching.mq.kafka.consumer.KafkaDemoConsumer;
+import com.example.learning.teaching.mq.rabbitmq.consumer.RabbitDemoConsumer;
 import com.rabbitmq.client.Channel;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 
 /** ACK 必须发生在业务成功之后；异常不能推进消费位置，也不能误确认其他消息。 */
 class MqConsumerAcknowledgmentTest {
-    private final MessageDemoDTO event = new MessageDemoDTO("m-1", "O-1", "order.created", "test", Instant.now(), 0, null);
+    private final MessageEvent event = new MessageEvent("m-1", "O-1", "order.created", "test", Instant.now(), 0, null);
     private final DemoBusinessService business = mock(DemoBusinessService.class);
 
     @Test

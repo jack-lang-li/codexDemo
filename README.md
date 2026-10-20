@@ -1,6 +1,6 @@
 # Java 企业后端学习实验项目
 
-这是一个用于循序学习 Java 高级开发、Spring 企业后端、微服务和分布式系统的 Maven 实验项目。当前代码仍以 Java 基础、订单领域示例和并发实验为主；`pom.xml` 已为后续学习准备常见企业技术栈。依赖就位不代表相关中间件已经配置或启动，按学习阶段逐项接入，不要一次启用所有基础设施。
+这是一个用于循序学习 Java 高级开发、Spring 企业后端、微服务和分布式系统的 Maven 实验项目。项目使用 LearningApplication 统一启动 Spring Boot，包含订单业务、MQ 接入与并发实验；`pom.xml` 已为后续学习准备常见企业技术栈。依赖就位不代表相关中间件已经配置或启动，按学习阶段逐项接入，不要一次启用所有基础设施。
 
 ## 技术基线
 
@@ -28,7 +28,7 @@ Spring Boot 负责 Spring 生态常用依赖版本；Spring Cloud、Spring Cloud
 
 > 支持状态：因项目明确要求 Spring Boot 3.x，这里选用 3.5 线最后一个 OSS 版本 3.5.16。Spring 官方已说明它是 3.5.x 的最后一个 OSS release；若用于生产环境，需要企业支持或规划迁移到 Spring Boot 4.x。
 
-**运行边界：** 这是单 Maven 模块的学习依赖集合，不是声称所有中间件已集成的生产服务。Spring Cloud Gateway 使用 WebFlux/reactive 技术栈，而本项目的普通 Web API 使用 Spring MVC；Gateway 应作为单独服务或独立模块学习，不要把两种 Web 栈当作一个运行入口。多个 MQ、数据库、缓存、搜索和调度组件也应按主题分开配置与运行。
+**运行边界：** 这是单 Maven 模块的学习依赖集合，不是声称所有中间件已集成的生产服务。Spring Cloud Gateway 使用 WebFlux/reactive 技术栈，而本项目的普通 Web API 使用 Spring MVC；Gateway 应作为单独服务或独立模块学习，不要把两种 Web 栈当作一个运行入口。RabbitMQ/Kafka 与订单业务运行在同一服务；其他基础设施按需配置和启用，教学案例按主题放在测试目录。
 
 ## 学习顺序
 
@@ -52,7 +52,7 @@ Spring Boot 负责 Spring 生态常用依赖版本；Spring Cloud、Spring Cloud
 
 ```text
 src/main/java/com/example/learning/   # 当前 Java 示例、领域对象和并发实验
-src/test/java/                         # 单元测试与待整理的学习示例
+src/test/java/                         # 自动测试与教学案例，不打包进服务
 docs/learning/stack/                   # 中间件与基础组件的一主题一目录
 docs/learning/lab/                     # 可运行实验说明和观察记录
 docs/architecture/                     # 演进路线与架构决策记录
@@ -65,19 +65,26 @@ docs/ai/                               # AI 辅助学习规范与模板
 
 ## 运行
 
-### RabbitMQ / Kafka 独立实战
+### 统一服务入口与消息能力
 
-已增加保留原纯 Java 示例的独立 MQ 入口，包含订单事件、路由、ACK、有限重试、死信与 Redis 幂等。
-先阅读 [改造报告与运行配置](docs/middleware/integration-report.md)，然后按
-[RabbitMQ 实战](docs/middleware/rabbitmq.md)、[Kafka 实战](docs/middleware/kafka.md) 和
-[选型对比](docs/middleware/rabbitmq-vs-kafka.md) 学习。
+运行 `com.example.learning.application.LearningApplication` 或 `.\mvnw.cmd spring-boot:run`。
+默认加载 `src/main/resources/application.yml`，不需要单独启动 MQ 服务类或激活 mq profile。
 
-替换 `src/main/resources/application-mq.yml` 中的 MQ 占位地址，并确认 Redis 可用后，执行
-`.\mvnw.cmd spring-boot:run` 或运行 `com.example.learning.mq.MqDemoApplication`。
-它仅扫描 `mq` 包并自动激活 `mq` profile，默认本机 `127.0.0.1:8080`；原 `LearningApplication.main` 行为不变。
-本次经确认修复 JJWT BOM 带来的 Jackson 版本混用，统一沿用当前 Boot BOM 管理值；没有更改 Boot/Cloud/JJWT 版本。
+主代码中 `OrderApplicationService.createOrder(...)` 复用原订单规则，再调用 RabbitMQ/Kafka
+生产者；消费者调用同一服务中的 `OrderEventHandler`，使用 Redis 幂等、ACK、有限重试与死信。
+配置地址后分别设置 `app.mq.rabbitmq.enabled=true`、`app.mq.kafka.enabled=true` 即可接入；
+默认关闭，未配置 MQ 时订单仍可使用。数据库等预置组件仍有禁用项，后续接入需同步调整。
 
-### 原 Java 示例与构建
+具体学习案例均在 `src/test/java/com/example/learning/teaching/mq/`：
+`MqTeachingTest` 通过 MockMvc/Mock 验证接口与序列化；`MqBrokerPracticeTest`
+在显式设置 `MQ_PRACTICE=true` 且外部 MQ/Redis 已配置后执行真实收发，默认跳过。
+正常服务不包含 `/demo/**`、教学安全放行或故障注入，也不打包这些测试代码。
+
+说明见 [改造报告](docs/middleware/integration-report.md)、[RabbitMQ](docs/middleware/rabbitmq.md)、
+[Kafka](docs/middleware/kafka.md) 与 [选型对比](docs/middleware/rabbitmq-vs-kafka.md)。
+经授权修复的 Jackson BOM 对齐继续保留，未更改 Boot/Cloud/JJWT 版本。
+
+### 构建与测试
 
 要求 JDK 17 或更高版本。Maven Wrapper 固定 Maven 3.9.16，但不会替你安装或切换 JDK。
 

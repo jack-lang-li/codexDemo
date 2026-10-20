@@ -1,6 +1,6 @@
 package com.example.learning.mq.kafka.config;
 
-import com.example.learning.mq.common.dto.MessageDemoDTO;
+import com.example.learning.mq.common.dto.MessageEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 class KafkaRecoveryTest {
     private KafkaTemplate<Object, Object> template;
     private DeadLetterPublishingRecoverer recoverer;
-    private final MessageDemoDTO event = new MessageDemoDTO("m-1", "O-1", "demo.error", "test", Instant.now(), 0, null);
+    private final MessageEvent event = new MessageEvent("m-1", "O-1", "demo.error", "test", Instant.now(), 0, null);
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -32,7 +32,7 @@ class KafkaRecoveryTest {
         ProducerFactory<Object, Object> factory = mock(ProducerFactory.class);
         when(template.getProducerFactory()).thenReturn(factory);
         when(factory.getConfigurationProperties()).thenReturn(Map.of("delivery.timeout.ms", 100));
-        recoverer = new KafkaDemoConfig().kafkaDeadLetterRecoverer(template);
+        recoverer = new KafkaConfig().kafkaDeadLetterRecoverer(template);
         recoverer.setVerifyPartition(false); // 只禁止测试查询 Broker 元数据，保留真实路由与投递确认逻辑。
     }
 
