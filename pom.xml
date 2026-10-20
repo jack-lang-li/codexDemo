@@ -46,6 +46,16 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- 修复已有 jjwt-bom 继承的 databind 2.12.7.1 覆盖 Boot JSON 基线的问题。
+                 用户已确认：统一使用当前 Boot 的 Jackson BOM，不指定或升级平台版本。
+                 当前层导入优先于 jjwt-bom 继承的 Jackson 条目，避免 core/databind/jsr310 混用。 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- Import compatible platform BOMs first; the Boot parent manages Spring Boot modules. -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -383,6 +393,10 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- 独立 MQ 实验入口；原纯 Java main 不变，不修改任何依赖版本。 -->
+                    <mainClass>com.example.learning.mq.MqDemoApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

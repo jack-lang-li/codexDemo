@@ -65,6 +65,20 @@ docs/ai/                               # AI 辅助学习规范与模板
 
 ## 运行
 
+### RabbitMQ / Kafka 独立实战
+
+已增加保留原纯 Java 示例的独立 MQ 入口，包含订单事件、路由、ACK、有限重试、死信与 Redis 幂等。
+先阅读 [改造报告与运行配置](docs/middleware/integration-report.md)，然后按
+[RabbitMQ 实战](docs/middleware/rabbitmq.md)、[Kafka 实战](docs/middleware/kafka.md) 和
+[选型对比](docs/middleware/rabbitmq-vs-kafka.md) 学习。
+
+替换 `src/main/resources/application-mq.yml` 中的 MQ 占位地址，并确认 Redis 可用后，执行
+`.\mvnw.cmd spring-boot:run` 或运行 `com.example.learning.mq.MqDemoApplication`。
+它仅扫描 `mq` 包并自动激活 `mq` profile，默认本机 `127.0.0.1:8080`；原 `LearningApplication.main` 行为不变。
+本次经确认修复 JJWT BOM 带来的 Jackson 版本混用，统一沿用当前 Boot BOM 管理值；没有更改 Boot/Cloud/JJWT 版本。
+
+### 原 Java 示例与构建
+
 要求 JDK 17 或更高版本。Maven Wrapper 固定 Maven 3.9.16，但不会替你安装或切换 JDK。
 
 Windows PowerShell：
