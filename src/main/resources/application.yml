@@ -43,9 +43,9 @@ spring:
     redis:
       # 原项目已有 Redis 依赖；幂等案例复用 Lettuce/StringRedisTemplate，无需启动 Redisson。
       # TODO：修改为自己的 Redis 地址；Redis 不可用时消费者失败并走有限重试，不降级为“成功”。
-      host: ${REDIS_HOST:127.0.0.1}
+      host: ${REDIS_HOST:192.168.66.128}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:root}
       database: ${REDIS_DATABASE:0}
       connect-timeout: 2s
       timeout: 2s
@@ -56,11 +56,11 @@ spring:
         enabled: false
   rabbitmq:
     # 这里修改为自己的 RabbitMQ 服务器地址。TODO：修改为真实 MQ 服务器地址。
-    host: ${RABBITMQ_HOST:192.168.1.100} # Broker 主机；不能填写管理台的 HTTP 地址。
+    host: ${RABBITMQ_HOST:192.168.66.128} # Broker 主机；不能填写管理台的 HTTP 地址。
     port: ${RABBITMQ_PORT:5672} # AMQP 协议端口，管理台通常是 15672。
-    username: ${RABBITMQ_USERNAME:guest} # 仅占位；guest 默认禁止远程访问，应创建有 vhost 权限的用户。
-    password: ${RABBITMQ_PASSWORD:guest} # 通过环境变量注入真实密码，不提交到仓库。
-    virtual-host: ${RABBITMQ_VHOST:/} # 逻辑隔离空间，用户须有 configure/write/read 权限。
+    username: ${RABBITMQ_USERNAME:test} # 仅占位；guest 默认禁止远程访问，应创建有 vhost 权限的用户。
+    password: ${RABBITMQ_PASSWORD:test} # 通过环境变量注入真实密码，不提交到仓库。
+    virtual-host: ${RABBITMQ_VHOST:/dev} # 逻辑隔离空间，用户须有 configure/write/read 权限。
     dynamic: ${app.mq.rabbitmq.enabled} # 仅启用 RabbitMQ 时才声明队列/交换机。
     connection-timeout: 3s # 避免不可达占位地址长时间阻塞请求。
     publisher-confirm-type: correlated # 用 CorrelationData 对应每次发布，Confirm 不代表消费者成功。
@@ -85,7 +85,7 @@ spring:
   kafka:
     # 这里修改为自己的 Kafka 服务器地址。TODO：修改为真实 MQ 服务器地址。
     bootstrap-servers:
-      - ${KAFKA_BOOTSTRAP_SERVERS:192.168.1.100:9092} # 集群引导地址；后续连接以 Broker advertised.listeners 为准。
+      - ${KAFKA_BOOTSTRAP_SERVERS:192.168.66.128:9092} # 集群引导地址；后续连接以 Broker advertised.listeners 为准。
     admin:
       auto-create: ${app.mq.kafka.enabled} # 由 KafkaAdmin/NewTopics 声明 Topic，不依赖 Broker auto.create.topics.enable。
       fail-fast: false # Broker 未就绪时记录错误；不会把“未连通”伪装成发送成功。
