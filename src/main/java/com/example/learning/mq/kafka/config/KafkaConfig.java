@@ -42,6 +42,10 @@ import static com.example.learning.mq.kafka.constant.KafkaNames.*;
 public class KafkaConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConfig.class);
 
+    /**
+     * 通过 KafkaAdmin 声明正式订单 Topic 和对应 DLT，二者分区数一致便于保留原分区。
+     * replicas 来自现有配置，默认 1 适用于单 Broker 学习环境；副本数不能超过可用 Broker 数。
+     */
     @Bean
     KafkaAdmin.NewTopics orderTopics(@Value("${app.mq.kafka-replicas:1}") int replicas) {
         return new KafkaAdmin.NewTopics(
@@ -49,6 +53,10 @@ public class KafkaConfig {
                 TopicBuilder.name(ORDER + ".DLT").partitions(3).replicas(replicas).build());
     }
 
+    /**
+     * 继承 YAML 的服务器、认证及生产参数，按消息类型选用真实客户端的序列化器。
+     * 正常 MessageEvent 序列化为 JSON；反序列化故障保留的 byte[] 原样写入 DLT，避免破坏排错原文。
+     */
     @Bean
     ProducerFactory<Object, Object> kafkaProducerFactory(KafkaProperties properties, SslBundles sslBundles,
             ObjectMapper mapper) {
@@ -62,11 +70,19 @@ public class KafkaConfig {
         return new DefaultKafkaProducerFactory<>(properties.buildProducerProperties(sslBundles), keys, values);
     }
 
+    /**
+     * 将生产者工厂包装为 Spring Kafka 发送入口，供正常业务及死信恢复共用连接和认证参数。
+     * 返回的模板执行真实网络发送，不创建内嵌 Broker。
+     */
     @Bean
     KafkaTemplate<Object, Object> kafkaTemplate(ProducerFactory<Object, Object> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
+    /**
+     * 将无法继续处理的记录发往“原 Topic.DLT”的同一分区，并保留来源及业务身份头。
+     * 必须确认 DLT 写入成功；写入失败继续抛错，让源记录保持可重投，避免先提交 offset 造成消息丢失。
+     */
     @Bean
     DeadLetterPublishingRecoverer kafkaDeadLetterRecoverer(KafkaTemplate<Object, Object> template) {
         var recoverer = new DeadLetterPublishingRecoverer(template,
@@ -84,6 +100,11 @@ public class KafkaConfig {
         return recoverer;
     }
 
+    /**
+     * 为可重试业务异常配置固定间隔、有限次数的重试，耗尽后交给死信发布器。
+     * retries 是额外重试次数，默认 2 加首次共 3 次；不可重试的协议/反序列化异常可直接隔离。
+     * 配合 MANUAL_IMMEDIATE，在 DLT 发布成功后提交恢复位置，避免每次启动反复处理同一失败记录。
+     */
     @Bean
     DefaultErrorHandler kafkaErrorHandler(DeadLetterPublishingRecoverer recoverer,
             @Value("${app.mq.kafka-retry-interval-ms:1000}") long interval,
@@ -98,6 +119,10 @@ public class KafkaConfig {
         return handler;
     }
 
+    /**
+     * 装配正式 Kafka 监听容器，继承 YAML 的消费者、并发及手动提交配置。
+     * 注册统一重试/DLT 错误处理器并启用投递次数头，监听方法成功后再主动提交 offset。
+     */
     @Bean
     ConcurrentKafkaListenerContainerFactory<Object, Object> kafkaListenerContainerFactory(
             ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
@@ -109,6 +134,10 @@ public class KafkaConfig {
         return factory;
     }
 
+    /**
+     * 提供独立的死信观察容器；其处理出错就停止容器等待排查。
+     * 不套用业务 Topic 的 DLT 转发逻辑，防止生成 .DLT.DLT 并无限转发。
+     */
     @Bean
     ConcurrentKafkaListenerContainerFactory<Object, Object> kafkaDltContainerFactory(
             ConcurrentKafkaListenerContainerFactoryConfigurer configurer,

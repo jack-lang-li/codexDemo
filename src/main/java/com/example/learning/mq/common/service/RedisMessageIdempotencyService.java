@@ -28,6 +28,10 @@ public class RedisMessageIdempotencyService {
     private final Duration lease;
     private final Duration retention;
 
+    /**
+     * 从当前 YAML 注入真实 Redis 和两个过期时间，启动时拒绝非正数配置。
+     * leaseSeconds 是处理占用的租约，retentionSeconds 是成功标记保留时间，二者服务于不同阶段。
+     */
     public RedisMessageIdempotencyService(StringRedisTemplate redis,
             @Value("${app.mq.idempotency.lease-seconds:300}") long leaseSeconds,
             @Value("${app.mq.idempotency.retention-seconds:86400}") long retentionSeconds) {
@@ -39,7 +43,16 @@ public class RedisMessageIdempotencyService {
         this.retention = Duration.ofSeconds(retentionSeconds);
     }
 
-    /** @return true 表示本次执行业务，false 表示已完成的重复消息。Redis 异常直接抛出，绝不误 ACK。 */
+    /**
+     * 对“订阅者 + 消息 ID”执行一次业务：SETNX 占位，成功后以 Lua 比较 token 并写入 DONE。
+     * 已完成的重复消息直接返回；仍在处理或业务失败则抛错，使监听器保留失败语义而非误确认。
+     * 失败释放占位时也校验 token，防止删除租约过期后其他消费者新取得的锁。
+     * @param scope 幂等范围，应含队列或 Kafka 消费组等独立业务身份
+     * @param messageId 事件唯一编号；发送同一事件的重试必须保持此值
+     * @param business 必须同步完成的核心业务，只有正常返回才写入 DONE
+     * @return true 表示本次执行业务，false 表示已完成的重复消息
+     * @throws RuntimeException Redis、业务、租约检查失败时直接向消费者传播
+     */
     public boolean execute(String scope, String messageId, Runnable business) {
         String key = "learning:mq:consumed:" + scope + ":" + messageId;
         String token = UUID.randomUUID().toString();

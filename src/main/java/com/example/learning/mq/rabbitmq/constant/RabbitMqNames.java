@@ -9,6 +9,9 @@ public final class RabbitMqNames {
     public static final String DLQ = "order.process.dlq";
     public static final String DEAD_KEY = "order.process.dead";
 
+    /**
+     * 仅供静态引用拓扑名称，禁止实例化；生产者、声明配置和消费者使用同一组名称避免路由不一致。
+     */
     private RabbitMqNames() {
     }
 }

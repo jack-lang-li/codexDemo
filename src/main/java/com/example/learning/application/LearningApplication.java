@@ -11,6 +11,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "com.example.learning.application", "com.example.learning.domain",
         "com.example.learning.config", "com.example.learning.mq"})
 public class LearningApplication {
+    /**
+     * 启动唯一的 Spring Boot 服务，装配订单业务及已启用的 MQ 组件。
+     * args 是命令行参数，按 Boot 规则可覆盖 application.yml；学习案例无需另建启动类。
+     */
     public static void main(String[] args) {
         SpringApplication.run(LearningApplication.class, args);
     }

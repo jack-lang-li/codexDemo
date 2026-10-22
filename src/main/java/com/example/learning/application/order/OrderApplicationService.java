@@ -27,6 +27,10 @@ public class OrderApplicationService {
     private final ObjectProvider<RabbitMessageProducer> rabbit;
     private final ObjectProvider<KafkaMessageProducer> kafka;
 
+    /**
+     * 注入原有订单领域服务及可选的消息生产者。
+     * ObjectProvider 允许通过配置分别关闭 RabbitMQ 或 Kafka，关闭时仍可执行订单领域规则。
+     */
     public OrderApplicationService(OrderService orders, ObjectProvider<RabbitMessageProducer> rabbit,
             ObjectProvider<KafkaMessageProducer> kafka) {
         this.orders = orders;
@@ -34,12 +38,27 @@ public class OrderApplicationService {
         this.kafka = kafka;
     }
 
+    /**
+     * 业务调用入口：校验商品和数量、计算订单金额，再发布订单创建事件。
+     * 生产者等待 Broker 确认后才返回订单；这不表示消费者已经完成后续业务。
+     * @param orderId 本次订单的业务编号，作为 Kafka 消息 key
+     * @param buyerId 下单用户编号
+     * @param productId 原商品目录中的商品编号
+     * @param quantity 购买数量，必须大于零
+     * @return 根据原领域规则创建的内存订单
+     * @throws IllegalStateException RabbitMQ 发布失败或未获确认；Kafka 异步异常由 join 传播
+     */
     public Order createOrder(String orderId, String buyerId, String productId, int quantity) {
         Order order = orders.createOrder(orderId, buyerId, productId, quantity);
         publishOrderCreated(order);
         return order;
     }
 
+    /**
+     * 把领域订单转成不可变事件快照，向已启用的 RabbitMQ 和 Kafka 发布同一 messageId。
+     * RabbitMQ 使用 Direct 路由，Kafka 使用订单号分区；消费者各自维护独立幂等范围。
+     * 两个发送依次确认；后一个失败时前一个可能已成功，调用方需核对和补偿，不能当作原子事务。
+     */
     private void publishOrderCreated(Order order) {
         String id = UUID.randomUUID().toString();
         Instant now = Instant.now();

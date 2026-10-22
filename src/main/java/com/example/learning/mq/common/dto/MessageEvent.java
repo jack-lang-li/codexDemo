@@ -15,6 +15,12 @@ public record MessageEvent(
         /* 服务端生成的事件时间。 */ Instant createTime,
         /* 初始为 0；框架内存重试不会改写原 JSON，请结合重试日志/header 观察实际次数。 */ int retryCount,
         /* 订单事件的结构化载荷；任务、注册消息可以没有订单。 */ OrderCreatedEvent order) {
+    /**
+     * 在显式构造及 Jackson 反序列化时校验消息信封，阻止身份为空或重试计数为负的消息进入业务。
+     * order 对通用任务可以为空，订单专用消费者会进一步校验订单快照。
+     * @throws IllegalArgumentException 必填身份为空白或 retryCount 为负
+     * @throws NullPointerException 描述或事件时间为 null
+     */
     public MessageEvent {
         if (messageId == null || messageId.isBlank() || businessId == null || businessId.isBlank()
                 || eventType == null || eventType.isBlank()) {

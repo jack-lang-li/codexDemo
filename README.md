@@ -67,18 +67,44 @@ docs/ai/                               # AI 辅助学习规范与模板
 
 ### 统一服务入口与消息能力
 
+**只想在 IDEA 点击测试，分别发消息和持续收消息：** 先看[独立生产者 / 消费者 Demo 操作说明](docs/middleware/idea-mq-demo.md)。
+直接运行 `RabbitMqProducerConsumerDemo` 或 `KafkaProducerConsumerDemo` 的 `consumeMessages()`，
+保持消费者窗口运行，再在另一个窗口运行同文件的 `sendMessage()`。不需要启动业务服务或 Redis。
+
+按课学习见 [RabbitMQ / Kafka 分步实战清单](docs/middleware/mq-learning-path.md)。目前已完成基础收发及
+[第二课：Direct 路由 / Kafka 分区](docs/middleware/mq-lesson-02-routing-partitions.md)，第二课入口是
+`RabbitMqDirectDemo` 与 `KafkaPartitionDemo`；其余主题在清单中标明为待做。
+
 运行 `com.example.learning.application.LearningApplication` 或 `.\mvnw.cmd spring-boot:run`。
 默认加载 `src/main/resources/application.yml`，不需要单独启动 MQ 服务类或激活 mq profile。
 
-主代码中 `OrderApplicationService.createOrder(...)` 复用原订单规则，再调用 RabbitMQ/Kafka
-生产者；消费者调用同一服务中的 `OrderEventHandler`，使用 Redis 幂等、ACK、有限重试与死信。
-配置地址后分别设置 `app.mq.rabbitmq.enabled=true`、`app.mq.kafka.enabled=true` 即可接入；
-默认关闭，未配置 MQ 时订单仍可使用。数据库等预置组件仍有禁用项，后续接入需同步调整。
+主代码中 `OrderApplicationService.createOrder(...)` 复用原订单规则，再调用真实 RabbitMQ/Kafka
+生产者；正式消费者调用 `OrderEventHandler`，使用真实 Redis 幂等、ACK、有限重试与死信。
+地址和账号读取 `src/main/resources/application.yml`，RabbitMQ/Kafka 默认启用。
+数据库等预置组件仍有禁用项，后续接入需同步调整。
 
-具体学习案例均在 `src/test/java/com/example/learning/teaching/mq/`：
-`MqTeachingTest` 通过 MockMvc/Mock 验证接口与序列化；`MqBrokerPracticeTest`
-在显式设置 `MQ_PRACTICE=true` 且外部 MQ/Redis 已配置后执行真实收发，默认跳过。
-正常服务不包含 `/demo/**`、教学安全放行或故障注入，也不打包这些测试代码。
+MQ 测试均为真实服务器案例，没有 Mockito/Spy、MockMvc、内嵌 Broker 或默认跳过开关：
+
+学完独立收发后可读 `OrderMqIntegrationTest`：调用订单业务函数 → 生产者发送 → MQ → 正式消费者 →
+`OrderEventHandler` 处理订单。这就是后续在 `LearningApplication` 中使用 MQ 的方式。
+两个中间件自动测试里的基础方法会在一次运行里完成发送与接收断言；Direct/Topic/Fanout、重试、死信、幂等是后续进阶场景。
+Controller 只是 HTTP 入口，MQ 收发本身不需要它；测试已删去旧请求 DTO 和事件服务，直接构造消息并调用生产者。
+MQ 接入、关联订单业务和测试代码的类、构造方法及方法均有中文用途与处理流程注释。
+
+```powershell
+# 先看完整业务：订单函数 -> 两个真实 Broker -> 主代码消费者 -> 真实 Redis DONE
+.\mvnw.cmd '-Dtest=OrderMqIntegrationTest' test
+# 再看 RabbitMQ：真实队列、Direct/Topic/Fanout、手动 ACK、重试、死信、Redis 去重
+.\mvnw.cmd '-Dtest=RabbitMqIntegrationTest' test
+# Kafka：真实分区、两个消费组、Offset 提交、重试/DLT、损坏 JSON
+.\mvnw.cmd '-Dtest=KafkaIntegrationTest' test
+```
+
+教学队列/Topic/Group 使用 `learning.practice.*` / `learning-practice-*`，与正式订单订阅隔离。
+`MqConsumptionProbe` 只被动记录真实消费者处理结果，不替换任何 MQ 客户端或业务方法。
+自动集成测试需要能访问自己的 RabbitMQ、Kafka、Redis；独立手动 Demo 只需要对应的 MQ。
+连接/认证失败会真实失败，不会跳过或模拟成功。
+正常服务没有 `/demo/**` 教学接口，测试不另建启动类，也不会启动 Broker 进程。
 
 说明见 [改造报告](docs/middleware/integration-report.md)、[RabbitMQ](docs/middleware/rabbitmq.md)、
 [Kafka](docs/middleware/kafka.md) 与 [选型对比](docs/middleware/rabbitmq-vs-kafka.md)。

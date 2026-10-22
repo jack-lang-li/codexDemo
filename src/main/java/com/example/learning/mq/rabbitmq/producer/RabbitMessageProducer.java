@@ -25,12 +25,24 @@ public class RabbitMessageProducer {
     private final RabbitTemplate template;
     private final long confirmTimeoutMs;
 
+    /**
+     * 注入真实 RabbitTemplate，并读取等待 Broker Confirm 的最长时间。
+     * 发送超时属于结果不确定，调用方应使用原 messageId 核对或重试，不能直接生成新事件重复业务。
+     */
     public RabbitMessageProducer(RabbitTemplate template,
             @Value("${app.mq.rabbit-confirm-timeout-ms:10000}") long confirmTimeoutMs) {
         this.template = template;
         this.confirmTimeoutMs = confirmTimeoutMs;
     }
 
+    /**
+     * 把结构化事件以持久化 JSON 发布给 Exchange，并同步等待本次发布的 Broker Confirm。
+     * 同时检查 Return：即使 Confirm 为 ACK，无匹配队列时仍视为失败；消费端业务是否完成另由 ACK 表达。
+     * @param exchange 交换机名；空字符串表示 RabbitMQ 默认交换机
+     * @param routingKey 路由键；使用默认交换机时填写目标队列名
+     * @param event 待发事件；重发同一事件应保留 messageId
+     * @throws IllegalStateException 发布失败、超时、被 NACK、无法路由或等待被中断
+     */
     public void send(String exchange, String routingKey, MessageEvent event) {
         // 同一个 messageId 可以发布多次，但每次 Confirm correlation 必须唯一。
         var correlation = new CorrelationData(event.messageId() + ":" + UUID.randomUUID());

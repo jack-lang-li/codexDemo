@@ -15,6 +15,11 @@ public record OrderCreatedEvent(
         /* 下单时总金额快照，不使用浮点数表示货币。 */ BigDecimal amount,
         /* 事件产生时间，统一使用 UTC Instant。 */ Instant createTime,
         /* 事件语义及未来协议演进的识别依据。 */ String eventType) {
+    /**
+     * 校验订单快照的必填字段，避免消费者在后续处理中才发现缺失数据。
+     * 金额由订单领域规则计算，快照构造器不重复计算；与外层消息的身份一致性由 OrderEventHandler 校验。
+     * @throws NullPointerException 任一快照字段为 null
+     */
     public OrderCreatedEvent {
         Objects.requireNonNull(eventId, "eventId");
         Objects.requireNonNull(orderId, "orderId");

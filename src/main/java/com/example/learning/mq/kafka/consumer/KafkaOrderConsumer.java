@@ -18,10 +18,19 @@ public class KafkaOrderConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaOrderConsumer.class);
     private final OrderEventHandler handler;
 
+    /**
+     * 注入与 RabbitMQ 复用的订单处理函数，通过不同订阅者 scope 让两条业务链独立完成幂等。
+     */
     public KafkaOrderConsumer(OrderEventHandler handler) {
         this.handler = handler;
     }
 
+    /**
+     * 由真实 Kafka 订单消费组拉取记录后触发，先完成订单业务和 Redis 幂等，再提交 offset。
+     * 三个消费线程按分区分工；异常向容器传播以触发有限重试/DLT，不在 finally 提交失败记录。
+     * @param record 实际 Broker 记录，含消息值、key、分区和 offset
+     * @param acknowledgment 当前记录的提交句柄；消费线程中调用以配合 MANUAL_IMMEDIATE
+     */
     @KafkaListener(topics = KafkaNames.ORDER, groupId = KafkaNames.ORDER_GROUP, concurrency = "3")
     public void onOrderCreated(ConsumerRecord<String, MessageEvent> record, Acknowledgment acknowledgment) {
         long start = System.nanoTime();

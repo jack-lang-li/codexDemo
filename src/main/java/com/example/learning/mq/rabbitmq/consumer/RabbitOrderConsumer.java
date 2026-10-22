@@ -16,10 +16,18 @@ public class RabbitOrderConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitOrderConsumer.class);
     private final OrderEventHandler handler;
 
+    /**
+     * 注入独立的订单业务处理函数；消费者负责 MQ 接收与确认，业务规则由处理函数维护。
+     */
     public RabbitOrderConsumer(OrderEventHandler handler) {
         this.handler = handler;
     }
 
+    /**
+     * 由真实订单队列推送触发，调用订单处理函数并记录结果和耗时；业务代码不应直接调用此监听方法。
+     * 正常返回后容器 AUTO ACK；异常继续抛给容器，有限重试耗尽后进入配置好的死信队列。
+     * @param event JSON 消息转换器还原的订单事件
+     */
     @RabbitListener(queues = RabbitMqNames.CREATED)
     public void onOrderCreated(MessageEvent event) {
         long start = System.nanoTime();

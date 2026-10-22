@@ -133,9 +133,9 @@ seata:
 app:
   mq:
     rabbitmq:
-      enabled: ${RABBITMQ_ENABLED:false} # 修改服务器配置后设为 true，生产者/消费者进入同一服务。
+      enabled: ${RABBITMQ_ENABLED:true} # 修改服务器配置后设为 true，生产者/消费者进入同一服务。
     kafka:
-      enabled: ${KAFKA_ENABLED:false} # 两种中间件可以分别启用。
+      enabled: ${KAFKA_ENABLED:true} # 两种中间件可以分别启用。
     order-listeners-enabled: true # 正常服务启用订单订阅；教学测试显式关闭，避免竞争同一队列/消费组。
     rabbit-confirm-timeout-ms: 10000 # 调用方等待 Broker Confirm 的上限，不等待消费者完成。
     kafka-replicas: 1 # 单机学习设置；多 Broker 环境可改为 3，先确认有足够节点。

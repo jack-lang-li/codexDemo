@@ -33,6 +33,10 @@ import static com.example.learning.mq.rabbitmq.constant.RabbitMqNames.*;
 public class RabbitMqConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMqConfig.class);
 
+    /**
+     * 声明正式订单的持久化 Direct 交换机、业务队列、死信交换机和死信队列，并建立精确绑定。
+     * RabbitAdmin 连接服务器时应用这些声明；业务消息重试耗尽被拒绝后，经 DLX 转入 DLQ 保留。
+     */
     @Bean
     Declarables orderRabbitTopology() {
         var direct = new DirectExchange(DIRECT, true, false);
@@ -44,12 +48,20 @@ public class RabbitMqConfig {
                 BindingBuilder.bind(deadLetters).to(dlx).with(DEAD_KEY));
     }
 
+    /**
+     * 复用 Boot 的 ObjectMapper 将 MessageEvent 转成 JSON，并支持 Instant 时间字段。
+     * 限定受信任的消息 DTO 包，避免根据外部类型头任意反序列化应用中的其他类型。
+     */
     @Bean
     Jackson2JsonMessageConverter rabbitJsonConverter(ObjectMapper mapper) {
         // 复用 Boot 的时间模块；限制受信任包，拒绝任意类型反序列化。
         return new Jackson2JsonMessageConverter(mapper, "com.example.learning.mq.common.dto");
     }
 
+    /**
+     * 构建真实 RabbitMQ 发送客户端，继承 YAML 中的连接、超时及确认设置。
+     * 设置 JSON 转换器和 mandatory，并注册 Confirm/Return 回调，使“Broker 接收”和“无法路由”都可观察。
+     */
     @Bean
     RabbitTemplate rabbitTemplate(RabbitTemplateConfigurer configurer, ConnectionFactory connectionFactory,
             Jackson2JsonMessageConverter converter, RabbitPublishListener listener) {
@@ -62,6 +74,10 @@ public class RabbitMqConfig {
         return template;
     }
 
+    /**
+     * 定义本地消费重试耗尽后的处理：记录失败，再拒绝当前消息且不重新入原队列。
+     * 依赖队列的 DLX 绑定保存死信；若这里只吞异常，AUTO 容器会认为成功并确认，失去失败证据。
+     */
     @Bean
     MessageRecoverer rabbitRetryRecoverer() {
         return (message, cause) -> {
@@ -74,6 +90,10 @@ public class RabbitMqConfig {
         };
     }
 
+    /**
+     * 创建正式消费者默认容器，沿用 YAML 的并发、预取及有限重试配置。
+     * AUTO 表示业务正常返回后由 Spring ACK；异常抛出则按重试和恢复策略处理，不是收到即确认。
+     */
     @Bean
     SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
             SimpleRabbitListenerContainerFactoryConfigurer configurer, ConnectionFactory connectionFactory) {

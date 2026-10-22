@@ -16,10 +16,21 @@ public class OrderEventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderEventHandler.class);
     private final RedisMessageIdempotencyService idempotency;
 
+    /**
+     * 注入真实 Redis 幂等服务，让两种 MQ 的消费者复用同一套重复消息处理规则。
+     */
     public OrderEventHandler(RedisMessageIdempotencyService idempotency) {
         this.idempotency = idempotency;
     }
 
+    /**
+     * 处理消费者收到的订单创建事件：先校验事件身份与订单快照，再在 Redis 幂等保护下记录订单。
+     * 当前后续业务只记录日志，实际库存、通知或统计逻辑可接在幂等回调中；此处不代表已实现外部系统。
+     * @param subscriber 订阅者身份；不同后续业务需分别传入，避免一个业务抑制另一个业务
+     * @param event 从 MQ 反序列化得到的完整订单消息
+     * @return SUCCESS 表示本次执行业务；DUPLICATE_SKIPPED 表示该订阅者已处理过
+     * @throws RuntimeException 数据不合法、Redis 不可用或业务失败时抛出，由监听容器重试或隔离
+     */
     public String onOrderCreated(String subscriber, MessageEvent event) {
         if (event == null || event.order() == null || !"order.created".equals(event.eventType())
                 || !event.messageId().equals(event.order().eventId())

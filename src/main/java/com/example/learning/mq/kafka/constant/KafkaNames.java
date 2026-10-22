@@ -7,6 +7,9 @@ public final class KafkaNames {
     public static final String MESSAGE_ID_HEADER = "message-id";
     public static final String BUSINESS_ID_HEADER = "business-id";
 
+    /**
+     * 常量容器不需要实例；统一 Topic、消费组及消息头名称，避免生产和消费配置拼写不一致。
+     */
     private KafkaNames() {
     }
 }
